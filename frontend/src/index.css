@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  /* Zinc 50 */
+  color: #18181b;
+  /* Zinc 900 */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Modern SaaS Card - Light & airy */
+.saas-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.saas-card:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Sidebar Styling - Designed for dark sidebar */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  color: #a1a1aa;
+  /* Zinc 400 */
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f4f4f5;
+  /* Zinc 100 */
+}
+
+.sidebar-link-active {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* Custom Scrollbar - Refined for light background */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Subtle Shadow Utility */
+.shadow-premium {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
