@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getCollections, createCollection, deleteCollection } from '../services/collections';
-import { Layers, Plus, Trash2, FolderOpen, MoreVertical, X, Loader2 } from 'lucide-react';
+import { getCollections, createCollection, deleteCollection, addBookmarksToCollection } from '../services/collections';
+import api from '../services/api';
+import { Layers, Plus, Trash2, FolderOpen, MoreVertical, X, Loader2, CheckSquare, Square, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Collections = () => {
@@ -9,6 +10,12 @@ const Collections = () => {
     const [showModal, setShowModal] = useState(false);
     const [newCollection, setNewCollection] = useState({ name: '', description: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [activeCluster, setActiveCluster] = useState(null);
+    const [allBookmarks, setAllBookmarks] = useState([]);
+    const [selectedBookmarkIds, setSelectedBookmarkIds] = useState([]);
+    const [isAddingNodes, setIsAddingNodes] = useState(false);
+    const [bookmarkSearch, setBookmarkSearch] = useState('');
 
     const fetchCollections = async () => {
         setLoading(true);
@@ -52,6 +59,45 @@ const Collections = () => {
         }
     };
 
+    const handleOpenAddModal = async (cluster) => {
+        setActiveCluster(cluster);
+        setShowAddModal(true);
+        try {
+            const res = await api.get('/bookmarks');
+            // Filter out bookmarks already in this cluster
+            const existingIds = cluster.bookmarks.map(b => b._id || b);
+            setAllBookmarks(res.data.data.filter(b => !existingIds.includes(b._id)));
+        } catch (err) {
+            console.error('Failed to fetch bookmarks', err);
+        }
+    };
+
+    const handleAddNodes = async () => {
+        if (selectedBookmarkIds.length === 0) return;
+        setIsAddingNodes(true);
+        try {
+            await addBookmarksToCollection(activeCluster._id, selectedBookmarkIds);
+            setShowAddModal(false);
+            setSelectedBookmarkIds([]);
+            fetchCollections();
+        } catch (err) {
+            alert('Failed to add nodes to cluster');
+        } finally {
+            setIsAddingNodes(false);
+        }
+    };
+
+    const toggleBookmarkSelection = (id) => {
+        setSelectedBookmarkIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const filteredBookmarks = allBookmarks.filter(b =>
+        b.title.toLowerCase().includes(bookmarkSearch.toLowerCase()) ||
+        b.url.toLowerCase().includes(bookmarkSearch.toLowerCase())
+    );
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -89,12 +135,21 @@ const Collections = () => {
                                 <div className="p-3 bg-zinc-950 text-white rounded-xl shadow-xl shadow-zinc-950/20 group-hover:bg-indigo-600 transition-colors">
                                     <Layers size={20} />
                                 </div>
-                                <button
-                                    onClick={() => handleDelete(collection._id)}
-                                    className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={() => handleOpenAddModal(collection)}
+                                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                        title="Add Nodes"
+                                    >
+                                        <Plus size={16} strokeWidth={2.5} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(collection._id)}
+                                        className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="relative">
@@ -146,7 +201,7 @@ const Collections = () => {
                 </div>
             )}
 
-            {/* Create Collection Modal */}
+            {/* Modals */}
             <AnimatePresence>
                 {showModal && (
                     <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -154,7 +209,7 @@ const Collections = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white border border-zinc-200 p-8 w-full max-w-md rounded-2xl shadow-2xl relative"
+                            className="bg-white border border-zinc-200 p-8 w-full max-md rounded-2xl shadow-2xl relative"
                         >
                             <button
                                 onClick={() => setShowModal(false)}
@@ -199,6 +254,91 @@ const Collections = () => {
                                     {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 'Establish Cluster'}
                                 </button>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showAddModal && (
+                    <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white border border-zinc-200 p-8 w-full max-w-2xl rounded-2xl shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => { setShowAddModal(false); setSelectedBookmarkIds([]); }}
+                                className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <header className="mb-6">
+                                <h3 className="text-xl font-bold text-zinc-900 tracking-tight">Add Nodes to {activeCluster?.name}</h3>
+                                <p className="text-zinc-500 text-sm mt-1">Select knowledge nodes to incorporate into this cluster.</p>
+                            </header>
+
+                            <div className="relative mb-6">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                                <input
+                                    type="text"
+                                    placeholder="Search your library..."
+                                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2.5 pl-10 pr-4 outline-none focus:bg-white focus:border-indigo-500/50 transition-all text-sm"
+                                    value={bookmarkSearch}
+                                    onChange={(e) => setBookmarkSearch(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2 max-h-80 overflow-y-auto pr-2 mb-8 custom-scrollbar">
+                                {filteredBookmarks.map(bookmark => (
+                                    <button
+                                        key={bookmark._id}
+                                        onClick={() => toggleBookmarkSelection(bookmark._id)}
+                                        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all group ${selectedBookmarkIds.includes(bookmark._id)
+                                            ? 'bg-indigo-50 border-indigo-200'
+                                            : 'bg-zinc-50 border-zinc-100 hover:border-zinc-200'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`${selectedBookmarkIds.includes(bookmark._id) ? 'text-indigo-600' : 'text-zinc-300'}`}>
+                                                {selectedBookmarkIds.includes(bookmark._id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-bold text-zinc-700 text-sm truncate max-w-[300px]">{bookmark.title}</div>
+                                                <div className="text-[11px] text-zinc-400 truncate max-w-[300px]">{bookmark.url}</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                                {filteredBookmarks.length === 0 && (
+                                    <div className="text-center py-12 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                                        <p className="text-zinc-400 text-sm font-medium">No available nodes found to add.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between pt-6 border-t border-zinc-100">
+                                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+                                    {selectedBookmarkIds.length} Nodes Selected
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setShowAddModal(false); setSelectedBookmarkIds([]); }}
+                                        className="px-5 py-2.5 text-zinc-500 hover:text-zinc-900 text-[11px] font-bold uppercase tracking-widest"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleAddNodes}
+                                        disabled={isAddingNodes || selectedBookmarkIds.length === 0}
+                                        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-[11px] uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                                    >
+                                        {isAddingNodes ? <Loader2 size={16} className="animate-spin" /> : 'Confirm Addition'}
+                                    </button>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}

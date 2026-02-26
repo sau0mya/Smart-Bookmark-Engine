@@ -9,9 +9,10 @@ const schema = yup.object({
     description: yup.string().max(500, 'Description too long'),
     category: yup.string().required('Category is required'),
     status: yup.string().oneOf(['normal', 'favorite', 'archived']).required('Status is required'),
+    clusterId: yup.string().nullable()
 }).required();
 
-const BookmarkForm = ({ onSubmit, initialData, isLoading, onCancel }) => {
+const BookmarkForm = ({ onSubmit, initialData, isLoading, onCancel, collections = [] }) => {
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema),
         defaultValues: initialData || {
@@ -75,6 +76,20 @@ const BookmarkForm = ({ onSubmit, initialData, isLoading, onCancel }) => {
                     </select>
                     {errors.status && <p className="text-rose-500 text-[11px] font-bold mt-1.5 ml-1">{errors.status.message}</p>}
                 </div>
+            </div>
+
+            <div>
+                <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5 ml-1">Target Cluster (Optional)</label>
+                <select
+                    {...register('clusterId')}
+                    className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2.5 focus:border-indigo-500/30 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all appearance-none text-sm text-zinc-600 font-bold shadow-sm cursor-pointer"
+                >
+                    <option value="">No Cluster</option>
+                    {collections.map(cluster => (
+                        <option key={cluster._id} value={cluster._id}>{cluster.name}</option>
+                    ))}
+                </select>
+                {errors.clusterId && <p className="text-rose-500 text-[11px] font-bold mt-1.5 ml-1">{errors.clusterId.message}</p>}
             </div>
 
             <div className="flex justify-end items-center gap-4 pt-6 border-t border-zinc-100 mt-2">

@@ -44,12 +44,20 @@ const Bookmarks = () => {
         const delayDebounce = setTimeout(() => {
             fetchBookmarks();
         }, 500);
+        // Also fetch collections for the form dropdown
+        getCollections().then(res => setCollections(res.data)).catch(console.error);
         return () => clearTimeout(delayDebounce);
     }, [searchTerm, category, status]);
 
     const handleCreate = async (data) => {
         try {
-            await api.post('/bookmarks', data);
+            const { clusterId, ...bookmarkData } = data;
+            const res = await api.post('/bookmarks', bookmarkData);
+
+            if (clusterId && res.data.data._id) {
+                await addBookmarksToCollection(clusterId, [res.data.data._id]);
+            }
+
             setShowForm(false);
             fetchBookmarks();
         } catch (err) {
@@ -59,7 +67,13 @@ const Bookmarks = () => {
 
     const handleUpdate = async (data) => {
         try {
-            await api.put(`/bookmarks/${editingBookmark._id}`, data);
+            const { clusterId, ...bookmarkData } = data;
+            const res = await api.put(`/bookmarks/${editingBookmark._id}`, bookmarkData);
+
+            if (clusterId) {
+                await addBookmarksToCollection(clusterId, [editingBookmark._id]);
+            }
+
             setEditingBookmark(null);
             fetchBookmarks();
         } catch (err) {
@@ -131,6 +145,7 @@ const Bookmarks = () => {
             await addBookmarksToCollection(clusterId, selectedIds);
             setSelectedIds([]);
             setShowClusterModal(false);
+            fetchBookmarks(); // Refresh to show any changes
             alert('Added to cluster successfully');
         } catch (err) {
             alert('Failed to add to cluster');
@@ -356,6 +371,7 @@ const Bookmarks = () => {
                             onSubmit={editingBookmark ? handleUpdate : handleCreate}
                             initialData={editingBookmark}
                             onCancel={() => { setShowForm(false); setEditingBookmark(null); }}
+                            collections={collections}
                         />
                     </div>
                 </div>
