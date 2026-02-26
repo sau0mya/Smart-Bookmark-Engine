@@ -7,15 +7,21 @@ const asyncHandler = require('../middleware/async');
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
     const { name, email, password } = req.body;
+    console.log(`[AUTH] Attempting registration for: ${email}`);
 
     // Create user
-    const user = await User.create({
-        name,
-        email,
-        password
-    });
-
-    sendTokenResponse(user, 201, res);
+    try {
+        const user = await User.create({
+            name,
+            email,
+            password
+        });
+        console.log(`[AUTH] User registered successfully: ${email}`);
+        sendTokenResponse(user, 201, res);
+    } catch (err) {
+        console.error(`[AUTH] Registration error for ${email}:`, err.message);
+        return next(err);
+    }
 });
 
 // @desc    Login user
@@ -23,6 +29,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.login = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
+    console.log(`[AUTH] Attempting login for: ${email}`);
 
     // Validate email & password
     if (!email || !password) {
@@ -33,6 +40,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
+        console.warn(`[AUTH] Login failed: User not found (${email})`);
         return next(new ErrorResponse('Invalid credentials', 401));
     }
 
@@ -40,9 +48,11 @@ exports.login = asyncHandler(async (req, res, next) => {
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
+        console.warn(`[AUTH] Login failed: Incorrect password for ${email}`);
         return next(new ErrorResponse('Invalid credentials', 401));
     }
 
+    console.log(`[AUTH] User logged in successfully: ${email}`);
     sendTokenResponse(user, 200, res);
 });
 
