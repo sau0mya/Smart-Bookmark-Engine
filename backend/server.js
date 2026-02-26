@@ -1,24 +1,18 @@
-require("dotenv").config();   // 1. Load env variables
+require("dotenv").config();
 
-const mongoose = require("mongoose");
 const app = require("./app");
 
-// 2. Connect MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-
-    // 3. Start server ONLY after DB connects
-    const PORT = process.env.PORT || 5000;
-
-    app.listen(PORT, () => {
-      console.log(
-        `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
-      );
-    });
-  })
-  .catch((err) => {
-    console.error("❌ Database connection failed:", err.message);
+// The database connection is already initiated in app.js via connectDB()
+// We just need to ensure the environment variable is available.
+if (!process.env.MONGODB_URI) {
+    console.error("❌ CRITICAL: MONGODB_URI is not defined in environment variables.");
     process.exit(1);
-  });
+}
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(
+        `🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+    );
+});
