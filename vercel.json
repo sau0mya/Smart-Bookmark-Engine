@@ -19,8 +19,8 @@
             "destination": "backend/index.js"
         },
         {
-            "source": "/(.*)",
-            "destination": "frontend/$1"
+            "source": "/((?!api|static|src|assets|favicon|vite).*)",
+            "destination": "/index.html"
         }
     ]
 }
