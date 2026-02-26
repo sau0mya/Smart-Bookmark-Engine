@@ -1,20 +1,26 @@
 const getBaseURL = () => {
-    const url = import.meta.env.VITE_API_URL || '';
-    // If it's empty or already just /api, return /api for relative routing
-    if (!url || url === '/api') return '/api';
-    // Ensure we don't double up or miss the /api prefix if pointing to a full domain
-    return url.endsWith('/api') ? url : `${url.replace(/\/$/, '')}/api`;
+    let url = import.meta.env.VITE_API_URL || '';
+    if (!url || url === '/api') return '';
+    return url.replace(/\/$/, '');
 };
 
-const API_URL = getBaseURL();
+const API_BASE = getBaseURL();
 
 /*
   Helper function for all API requests
 */
 const request = async (endpoint, options = {}) => {
     try {
-        // endpoint usually starts with /auth or /bookmarks
-        const res = await fetch(`${API_URL}${endpoint}`, {
+        // Ensure endpoint starts with /api if it doesn't already
+        let path = endpoint;
+        if (!path.startsWith('/api')) {
+            path = path.startsWith('/') ? `/api${path}` : `/api/${path}`;
+        }
+
+        const url = `${API_BASE}${path}`;
+        console.log('[API Fetch] Calling:', url);
+
+        const res = await fetch(url, {
             headers: {
                 "Content-Type": "application/json",
                 ...(localStorage.getItem("token") && {
