@@ -1,0 +1,11 @@
+{
+    "name": "smart-bookmark-engine",
+    "private": true,
+    "workspaces": [
+        "frontend",
+        "backend"
+    ],
+    "scripts": {
+        "build": "cd frontend && npm install && npm run build"
+    }
+}
