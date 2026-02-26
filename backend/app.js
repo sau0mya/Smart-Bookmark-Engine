@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
 
@@ -44,6 +45,16 @@ app.use('/api/collections', collections);
 
 // Custom error handler middleware
 app.use(errorHandler);
+
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+    // Set static folder
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+    app.get('*', (req, res) =>
+        res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+    );
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {

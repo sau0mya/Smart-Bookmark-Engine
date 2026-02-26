@@ -1,11 +1,12 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-    let url = import.meta.env.VITE_API_URL || '';
-    if (!url || url === '/api') return ''; // Use relative path in local dev
+    // In our unified deployment, if we are on the same domain, we can use relative path /api
+    const url = import.meta.env.VITE_API_URL || '';
+    if (!url || url === '/api') return '/api';
 
-    // Clean trailing slash
-    return url.replace(/\/$/, '');
+    // If a full URL is provided (external backend), clean trailing slash
+    return url.replace(/\/$/, '') + '/api';
 };
 
 const api = axios.create({
@@ -15,16 +16,13 @@ const api = axios.create({
     }
 });
 
-// Add a request interceptor to handle path resolution and auth token
+// Add a request interceptor to handle auth token and ensure pathing remains simple
 api.interceptors.request.use(
     (config) => {
-        // Ensure all local paths are prefixed with /api
-        if (config.url && !config.url.startsWith('http')) {
-            let path = config.url;
-            if (!path.startsWith('/api')) {
-                path = path.startsWith('/') ? `/api${path}` : `/api/${path}`;
-            }
-            config.url = path;
+        // Interceptor strips leading slashes if they exist in component calls (e.g., api.get('/auth'))
+        // to prevent baseURL resolution issues in some environments.
+        if (config.url && config.url.startsWith('/')) {
+            config.url = config.url.substring(1);
         }
 
         const token = localStorage.getItem('token');
