@@ -38,6 +38,20 @@ const Dashboard = () => {
         </div>
     );
 
+    if (!data || !data.stats) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-zinc-200 shadow-sm">
+                <p className="text-zinc-500 font-bold">Failed to load analytics data.</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 text-indigo-600 font-bold hover:underline"
+                >
+                    Retry Connection
+                </button>
+            </div>
+        );
+    }
+
     const COLORS = ['#6366f1', '#10b981', '#64748b', '#71717a', '#a1a1aa'];
 
     const statusData = [
